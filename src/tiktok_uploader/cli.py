@@ -6,9 +6,9 @@ from argparse import ArgumentParser, Namespace
 from os.path import exists, join
 import datetime
 
-from tiktok_uploader.upload import upload_video
-from tiktok_uploader.auth import login_accounts, save_cookies
-from tiktok_uploader.types import ProxyDict
+from src.tiktok_uploader.upload import upload_video
+from src.tiktok_uploader.auth import login_accounts, save_cookies
+from src.tiktok_uploader.types import ProxyDict
 
 
 def main() -> None:

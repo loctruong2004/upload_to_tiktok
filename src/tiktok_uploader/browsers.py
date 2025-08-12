@@ -19,8 +19,8 @@ from selenium.webdriver.edge.service import Service as EdgeService
 
 from selenium import webdriver
 
-from tiktok_uploader import config
-from tiktok_uploader.proxy_auth_extension.proxy_auth_extension import (
+from src.tiktok_uploader import config
+from src.tiktok_uploader.proxy_auth_extension.proxy_auth_extension import (
     generate_proxy_auth_extension,
 )
 

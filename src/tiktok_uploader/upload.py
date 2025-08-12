@@ -25,13 +25,13 @@ from selenium.common.exceptions import (
 )
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from tiktok_uploader.browsers import get_browser
-from tiktok_uploader.auth import AuthBackend
-from tiktok_uploader import config, logger
-from tiktok_uploader.utils import bold, green, red
-from tiktok_uploader.proxy_auth_extension.proxy_auth_extension import proxy_is_working
+from src.tiktok_uploader.browsers import get_browser
+from src.tiktok_uploader.auth import AuthBackend
+from src.tiktok_uploader import config, logger
+from src.tiktok_uploader.utils import bold, green, red
+from src.tiktok_uploader.proxy_auth_extension.proxy_auth_extension import proxy_is_working
 
-from tiktok_uploader.types import VideoDict, ProxyDict, Cookie
+from src.tiktok_uploader.types import VideoDict, ProxyDict, Cookie
 from typing import Any, Callable, Literal
 
 
