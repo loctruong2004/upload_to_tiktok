@@ -1,0 +1,876 @@
+{
+  "name": "ytb",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1960,
+        600
+      ],
+      "id": "16f0cf9b-797b-4a6d-bd58-7e565df049db",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/videos",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "{\n  \"part\": \"snippet,statistics\",\n    \"chart\": \"mostPopular\",\n    \"regionCode\": \"VN\", \n    \"videoCategoryId\": \"20\",  \n    \"maxResults\": 10,\n    \"key\": \"AIzaSyB_mFPv4pJ0-VW6NkHysjpda7zJhmYh74k\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1740,
+        980
+      ],
+      "id": "e4a8127a-4932-42e2-83fb-83341ec3a901",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# Loop over input items and add a new field called 'myNewField' to the JSON of each one\nimport sys\n\n\ntry:\n    import yt_dlp\n    ytdlp_status = \"✅ yt_dlp imported OK\"\nexcept Exception as e:\n    ytdlp_status = f\"❌ Cannot import yt_dlp: {e}\"\n\nreturn [{\n    \"json\": {\n        \"python_path\": sys.executable,\n        \"site_packages\": sys.path,\n        \"yt_dlp_status\": ytdlp_status\n    }\n}]\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2220,
+        960
+      ],
+      "id": "3187bb9d-1cc4-462c-a7a4-508b821e66be",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet"
+            },
+            {
+              "name": "q",
+              "value": "minecraft"
+            },
+            {
+              "name": "type",
+              "value": "video"
+            },
+            {
+              "name": "regionCode",
+              "value": "VN"
+            },
+            {
+              "name": "maxResults",
+              "value": "20"
+            },
+            {
+              "name": "order",
+              "value": "viewCount"
+            },
+            {
+              "name": "videoCategoryId",
+              "value": "20"
+            },
+            {
+              "name": "key",
+              "value": "AIzaSyB_mFPv4pJ0-VW6NkHysjpda7zJhmYh74k"
+            },
+            {
+              "name": "publishedAfter",
+              "value": "={{ $json.publishedAfter }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "HTTP Request - Lấy list video ytb",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -1480,
+        600
+      ],
+      "id": "af5e06c3-12cf-412b-8410-dde0d018ff94"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -1780,
+        600
+      ],
+      "id": "6d13cea8-5891-47fa-9cc7-013a14a8451f",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
+        "jsCode": "const currentDate = new Date($input.first().json.currentDate);\n\n// Tính thứ trong tuần (0 = CN, 1 = Thứ 2, ..., 6 = Thứ 7)\nconst dayOfWeek = currentDate.getUTCDay();\nconst daysSinceMonday = (dayOfWeek + 6) % 7;  // đổi CN=0 thành 6\n\n// Tính ngày thứ 2 đầu tuần (giờ UTC)\nconst monday = new Date(currentDate);\nmonday.setUTCDate(currentDate.getUTCDate() - daysSinceMonday);\nmonday.setUTCHours(0, 0, 0, 0); // reset về 00:00:00Z\n\n// Trả kết quả\nreturn [\n  {\n    json: {\n      publishedAfter: monday.toISOString()\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1640,
+        600
+      ],
+      "id": "c28a1c0b-7993-42b2-a857-c6623fad034e",
+      "name": "Code4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = [];\n\n// Hàm xoá ký tự đặc biệt, giữ chữ cái, số và khoảng trắng\nfunction cleanText(text) {\n  return text.replace(/[^\\p{L}\\p{N}\\s]/gu, '');\n}\n\nfor (const item of $input.all()) {\n  const items = item.json.items || [];\n  for (const i of items) {\n    result.push({\n      json: {\n        title: cleanText(i.snippet.title),\n        description: cleanText(i.snippet.description),\n        urlvideo: `https://www.youtube.com/watch?v=${i.id.videoId}`\n      }\n    });\n  }\n}\n\nreturn result;\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1320,
+        600
+      ],
+      "id": "94209ac8-c2ae-47e8-8b21-a36104e4493b",
+      "name": "convert to json",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://0.0.0.0:8000/upload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "duet",
+              "value": "0"
+            },
+            {
+              "name": "brandorganic",
+              "value": "0"
+            },
+            {
+              "name": "user",
+              "value": "loctruong"
+            },
+            {
+              "name": "ailabel",
+              "value": "0"
+            },
+            {
+              "name": "proxy"
+            },
+            {
+              "name": "stitch",
+              "value": "0"
+            },
+            {
+              "name": "brandcontent",
+              "value": "0"
+            },
+            {
+              "name": "visibility",
+              "value": "0"
+            },
+            {
+              "name": "youtube_url",
+              "value": "string"
+            },
+            {
+              "name": "title",
+              "value": "Hôm nay đi biển thật vui!  #travel  #sea  #vacation"
+            },
+            {
+              "name": "comment",
+              "value": "1"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "video_file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -420,
+        540
+      ],
+      "id": "ba88d2aa-7041-49e3-8595-f8bc092dbfe9",
+      "name": "upload video tiktok"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/download",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "title",
+              "value": "={{ $json.title }}"
+            },
+            {
+              "name": "description",
+              "value": "={{ $json.description }}"
+            },
+            {
+              "name": "urlvideo",
+              "value": "={{ $json.urlvideo }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -900,
+        800
+      ],
+      "id": "e2b57dca-0dc4-48e3-9b9c-55db40f2d7ce",
+      "name": "dowload video"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1080,
+        600
+      ],
+      "id": "4f56e94c-a48b-4222-afd3-120ddd8c3e07",
+      "name": "loop for dowload only 1 video",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -680,
+        820
+      ],
+      "id": "aed65f31-87bd-4be4-91e9-e2b004f6694a",
+      "name": "loop for upload only one video",
+      "notesInFlow": false,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/upload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "video_path",
+              "value": "={{ $json.path }}"
+            },
+            {
+              "name": "description",
+              "value": "={{ $json.description }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -460,
+        980
+      ],
+      "id": "2cd03d05-5841-4c34-bda2-2c23e477c0de",
+      "name": "upload video to tiktok"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1cgxpN2iZIX82z8iuUTB4ayfmi-bQeY0fRrhHqjuOmqM",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Trang tính1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cgxpN2iZIX82z8iuUTB4ayfmi-bQeY0fRrhHqjuOmqM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "url": "={{ $json.url }}",
+            "upload": "={{ $json.status }}",
+            "time upload": "={{ $now.setZone('Asia/Ho_Chi_Minh').format('h:mm MM-DD HH') }}"
+          },
+          "matchingColumns": [
+            "url"
+          ],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "dowload",
+              "displayName": "dowload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "time dowload",
+              "displayName": "time dowload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "upload",
+              "displayName": "upload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time upload",
+              "displayName": "time upload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        20,
+        1120
+      ],
+      "id": "19b8f0ec-8152-46cb-b01b-3408aaaa7241",
+      "name": "update status upload",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WlsA2lErncODMLLC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1cgxpN2iZIX82z8iuUTB4ayfmi-bQeY0fRrhHqjuOmqM",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Trang tính1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cgxpN2iZIX82z8iuUTB4ayfmi-bQeY0fRrhHqjuOmqM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "url": "={{ $json.url }}",
+            "time dowload": "={{ $now.setZone('Asia/Ho_Chi_Minh').format('h:mm MM-DD HH') }}",
+            "dowload": "success"
+          },
+          "matchingColumns": [
+            "url"
+          ],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "dowload",
+              "displayName": "dowload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time dowload",
+              "displayName": "time dowload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "upload",
+              "displayName": "upload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "time upload",
+              "displayName": "time upload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -480,
+        720
+      ],
+      "id": "0ac4b8b7-1b89-46ba-808c-d0b02e7bcaaf",
+      "name": "update status dowload",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WlsA2lErncODMLLC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1cgxpN2iZIX82z8iuUTB4ayfmi-bQeY0fRrhHqjuOmqM",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Trang tính1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cgxpN2iZIX82z8iuUTB4ayfmi-bQeY0fRrhHqjuOmqM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.title }}",
+            "description": "={{ $json.description }}",
+            "url": "={{ $json.urlvideo }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dowload",
+              "displayName": "dowload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time dowload",
+              "displayName": "time dowload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "upload",
+              "displayName": "upload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time upload",
+              "displayName": "time upload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -760,
+        620
+      ],
+      "id": "93f43dd1-bb7d-4497-a16b-1cc554fe9741",
+      "name": "add to table",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WlsA2lErncODMLLC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        -240,
+        780
+      ],
+      "id": "cd27def3-9b37-44c2-86a4-a46f95c535de",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Date & Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request - Lấy list video ytb": {
+      "main": [
+        [
+          {
+            "node": "convert to json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "main": [
+        [
+          {
+            "node": "Code4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code4": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Lấy list video ytb",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "convert to json": {
+      "main": [
+        [
+          {
+            "node": "loop for dowload only 1 video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dowload video": {
+      "main": [
+        [
+          {
+            "node": "loop for upload only one video",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "update status dowload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "loop for dowload only 1 video": {
+      "main": [
+        [],
+        [
+          {
+            "node": "dowload video",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "add to table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "loop for upload only one video": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "upload video to tiktok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload video to tiktok": {
+      "main": [
+        [
+          {
+            "node": "loop for upload only one video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update status upload": {
+      "main": [
+        [
+          {
+            "node": "loop for dowload only 1 video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "add to table": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "update status upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update status dowload": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e4d9cddc-4818-4bad-9750-244433a40b9e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "538faf757673916cb53ebbade9a85f473e4c35d6e46b95c16c1566254f590ab1"
+  },
+  "id": "h62XZMr9IxPZCyz3",
+  "tags": []
+}
