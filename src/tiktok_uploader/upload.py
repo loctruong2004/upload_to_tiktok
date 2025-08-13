@@ -374,7 +374,7 @@ def _set_description(driver: WebDriver, description: str) -> None:
 
     desc.click()
 
-    time.sleep(1)
+    time.sleep(2)
 
     try:
         words = description.split(" ")
@@ -755,7 +755,6 @@ def __verify_time_picked_is_correct(driver: WebDriver, hour: int, minute: int) -
         )
         raise Exception(msg)
 
-
 def _post_video(driver: WebDriver) -> None:
     """
     Posts the video by clicking the post button
@@ -777,7 +776,22 @@ def _post_video(driver: WebDriver) -> None:
         post.click()
     except ElementClickInterceptedException:
         logger.debug(green("Trying to click on the button again"))
+        
         driver.execute_script('document.querySelector(".TUXButton--primary").click()')
+
+    # 🔹 Kiểm tra nút "Post now" và click nếu xuất hiện
+    try:
+        post_now_btn = WebDriverWait(driver, 2).until(
+            EC.presence_of_element_located((By.XPATH, "//button[@aria-disabled='false']//div[text()='Post now']"))
+        )
+        driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", post_now_btn
+        )
+        time.sleep(1)
+        post_now_btn.click()
+        logger.debug(green("Clicked on 'Post now' button"))
+    except TimeoutException:
+        logger.debug("No 'Post now' button found, skipping.")
 
     # waits for the video to upload
     post_confirmation = EC.presence_of_element_located(

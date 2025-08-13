@@ -2,14 +2,18 @@ from fastapi import FastAPI, Form
 from pydantic import BaseModel
 from src.tiktok_uploader.upload import upload_video
 import uvicorn
-
+from typing import List
 app = FastAPI()
 
 @app.post("/upload")
 async def upload_tiktok(
     video_path: str = Form(...),
     description: str = Form(...)
+    
 ):
+    # print(hashtag)
+    description = description.strip()
+    print(description)
     try:
         # Gọi hàm upload TikTok
         upload_video(
